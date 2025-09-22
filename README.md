@@ -38,7 +38,7 @@ Object recognition is made difficult by several factors of variation :
 
 ---
 
-### **Chapter 4. Optimization Algorithms**
+## **Chapter 4. Optimization Algorithms**
 - **Gradient Descent**: The fundamental optimization strategy is to iteratively update the weights by taking steps in the direction opposite to the gradient of the loss function. The goal is to "follow the slope" downhill to find the minimum loss.
     - **Numerical vs. Analytic Gradient**: The gradient can be computed numerically (slow, approximate) or analytically using calculus (fast, exact, but error-prone). In practice, analytic gradients are used and verified with numerical checks.
 - **Stochastic Gradient Descent (SGD)**: Instead of computing the full loss over the entire dataset, SGD estimates the gradient using a small batch of data. This is much faster but can be noisy.
@@ -51,7 +51,7 @@ Object recognition is made difficult by several factors of variation :
     - **RMSProp**: This optimizer resolves AdaGrad's diminishing learning rate issue by using a moving average of the squared gradients, preventing it from growing too large.
     - **Adam**: This is one of the most popular optimizers, combining the ideas of Momentum and RMSProp. It uses both the first moment (the mean, like momentum) and the second moment (the uncentered variance, like RMSProp) of the gradients.
 ---
-### **Chapter 5. Neural Networks and Backpropagation**
+## **Chapter 5. Neural Networks and Backpropagation**
 - **Backpropagation**: This is the core algorithm for training neural networks. It uses the **chain rule** from calculus to efficiently compute the gradient of the loss function with respect to every weight in the network. The process involves a forward pass (computing the output and loss) followed by a backward pass (propagating the gradient from the output layer back to the input layer).
 - **Computational Graphs**: Neural networks can be represented as computational graphs, where nodes are operations (e.g., multiplication, addition) and edges are the data flow. Backpropagation is essentially the process of computing gradients on this graph.
 - **Activation Functions**: These functions introduce non-linearity into the network, allowing it to learn complex patterns.
@@ -60,7 +60,7 @@ Object recognition is made difficult by several factors of variation :
     - **ReLU (Rectified Linear Unit)**: The most common activation function. It computes `f(x) = max(0, x)`. It is computationally efficient and avoids saturation in the positive region but can "die" if its output is always zero.
     - **Leaky ReLU**: A variant of ReLU that allows a small, non-zero gradient when the unit is not active (`f(x) = max(0.01x, x)`), preventing the "dying ReLU" problem.
 ---
-### **Chapter 6. Training Neural Networks: Practical Aspects**
+## **Chapter 6. Training Neural Networks: Practical Aspects**
 - **Data Preprocessing**: It's common practice to preprocess input data by making it **zero-centered** (subtracting the mean) and **normalized** (dividing by the standard deviation). This helps the model train more effectively.
 - **Weight Initialization**:
     - Initializing all weights to zero is a mistake because all neurons will compute the same thing.
@@ -71,7 +71,7 @@ Object recognition is made difficult by several factors of variation :
 - **Regularization (Dropout)**: During training, **Dropout** randomly sets a fraction of neurons to zero at each forward pass. This prevents neurons from co-adapting too much and forces the network to learn more robust, redundant representations, reducing overfitting.
 - **Regularization (Data Augmentation)**: This technique artificially expands the training dataset by creating modified copies of images (e.g., random flips, rotations, color jitter). This helps the model generalize better to unseen data.
 ---
-### **Chapter 7. Convolutional Neural Networks (CNNs)**
+## **Chapter 7. Convolutional Neural Networks (CNNs)**
 - **Convolution Layer**: The core building block of a CNN. It preserves the spatial structure of the input image by convolving a set of learnable filters (kernels) across it. Each filter is specialized to detect a specific feature (e.g., an edge, a color blob). The output is a set of **activation maps** representing the detected features.
 - **Pooling Layer**: This layer is used to downsample the spatial dimensions of the activation maps, making the representation smaller and more manageable. **Max Pooling** is the most common form, where a small window is slid over the map, and only the maximum value in the window is kept. This provides a degree of translation invariance.
 - **Fully Connected (FC) Layer**: Typically found at the end of a CNN architecture, this layer takes the high-level features from the convolutional and pooling layers and maps them to the final class scores. Each neuron in an FC layer is connected to all activations in the previous layer.
