@@ -1,79 +1,69 @@
-# Computer Vision
-***
-## Chapter 1. Fundamentals of Image Classification
-### The Problem: Semantic Gap
-- **Computer vs. Human Vision**: A computer perceives an image as a large grid of numerical pixel values (e.g., values from 0-255 across RGB channels), while a human interprets it semantically (e.g., identifying an object as a "cat"). The core challenge is bridging this "semantic gap".
-- **Image Representation**: An image is treated as a numerical array. For instance, a 32x32 pixel image with 3 color channels (RGB) is represented as a 3072-dimensional vector of numbers for the classifier.
+<details>
+<summary>ENG (English Version)</summary>
 
-### Core Challenges in Classification
-Object recognition is made difficult by several factors of variation :
-- **Illumination**: Changes in lighting can drastically alter pixel values.
-- **Deformation**: Objects can appear in various non-rigid shapes and poses.
-- **Occlusion**: Objects may be partially hidden from view.
-- **Background Clutter**: The object of interest may blend in with a complex background.
-- **Intraclass Variation**: Objects within the same class can look very different from one another (e.g., different breeds of cats).
-***
-## Chapter 2. Classification Models
-### k-Nearest Neighbors (k-NN)
-- **Method**: A simple algorithm that classifies an image based on the majority class of its "k" nearest neighbors in the training data, typically measured by L1 (Manhattan) or L2 (Euclidean) distance between pixel values.
-- **Limitations**: The k-NN approach is rarely used for image classification because it is very slow during testing, pixel-level distance metrics are not robust to appearance changes, and it performs poorly in high-dimensional spaces like images (an issue known as the "curse of dimensionality").
+# Convolutional Neural Networks (CNN)
 
-### Parametric Approach: Linear Classifiers
-- **Core Idea**: Instead of comparing to all training images, this approach defines a score function that maps the raw pixel data to class scores using a set of parameters (weights).
-- **Score Function**: A simple linear score function is defined as **f(x, W) = Wx + b**, where 'x' is the input image data (stretched into a column vector), 'W' is the weight matrix, and 'b' is a bias vector.
-- **Process**: The weight matrix 'W' acts as a set of templates, one for each class. The input image is compared against each class template via a matrix multiplication to generate a score for each class. The class with the highest score is the predicted label.
-***
-## Chapter 3. Model Training and Optimization
-### Loss Function
-- **Purpose**: A loss function (or cost function) quantifies how well the model's predicted scores align with the ground-truth labels in the training data. The goal of training is to find the set of weights 'W' that minimizes this loss.
-- **Multiclass SVM Loss**: Also known as Hinge Loss, it aims to ensure that the score for the correct class is higher than the scores for all incorrect classes by at least a fixed margin.
-- **Softmax Classifier (Cross-Entropy Loss)**: This function interprets the raw class scores as unnormalized log probabilities. It then computes the probability for each class and aims to maximize the probability of the correct class. The loss is the negative log-likelihood of the correct class.
+### 1. CNN Introduction and History
+- **Origin:** Developed by Yann LeCun in 1989 with LeNet-5 for document recognition; excels in image processing by preserving spatial topology.
+- **Key Advantages:** Parameter sharing reduces overfitting; captures local patterns and spatial hierarchies effectively.
+- **LeNet-5 Architecture:** 32x32 input → CONV1 (28x28x6) → POOL → CONV2 (10x10x16) → POOL → FC → Softmax (10 classes).
 
-### Regularization
-- **Goal**: Regularization is a technique used to prevent the model from becoming overly complex and overfitting to the training data. It encourages the model to use simpler weights, aligning with the principle of Occam's Razor.
-- **Method**: A regularization penalty term is added to the loss function. Common types include **L2 regularization** (penalizes the squared magnitude of weights), **L1 regularization** (penalizes the absolute value of weights), and **Elastic Net** (a combination of L1 and L2).
+### 2. Convolution Layer Fundamentals
+- **Operation:** Filter (kernel) slides over input creating feature maps (activation/response maps) that detect edges, textures.
+- **RGB Processing:** Separate filters for Red, Green, Blue channels produce color-specific feature maps; ReLU activation follows.
+- **Filter vs Kernel:** Filters optimized during training; Sobel filters detect vertical/horizontal edges explicitly.
 
-### Optimization
-- **Objective**: The ultimate goal is to find the optimal weight matrix 'W' that minimizes the total loss, which is the sum of the data loss (from the SVM or Softmax function) and the regularization loss. This process is called optimization.
+### 3. Pooling Layer Operations
+- **Types:** Max Pooling (largest value), Average Pooling (mean), Min Pooling; downsamples feature maps reducing computation.
+- **Purpose:** Spatial invariance, overfitting prevention, dimensionality reduction (e.g., 6x6 → 3x3 with 2x2 stride=2).
+- **Stride Effect:** Controls output size; larger stride reduces spatial dimensions faster.
 
----
+### 4. Advanced CNN Components
+- **Padding:** 'Valid' (no padding, shrinks size), 'Same' (zero-padding maintains input size); preserves edge features.
+- **Dropout:** Randomly drops nodes in fully connected layers to prevent co-adaptation and overfitting.
+- **Fully Connected Layers:** Flattens feature maps for final classification; follows convolutional/pooling stack.
 
-## **Chapter 4. Optimization Algorithms**
-- **Gradient Descent**: The fundamental optimization strategy is to iteratively update the weights by taking steps in the direction opposite to the gradient of the loss function. The goal is to "follow the slope" downhill to find the minimum loss.
-    - **Numerical vs. Analytic Gradient**: The gradient can be computed numerically (slow, approximate) or analytically using calculus (fast, exact, but error-prone). In practice, analytic gradients are used and verified with numerical checks.
-- **Stochastic Gradient Descent (SGD)**: Instead of computing the full loss over the entire dataset, SGD estimates the gradient using a small batch of data. This is much faster but can be noisy.
-- **Challenges with SGD**:
-    - It can get stuck in **local minima or saddle points** where the gradient is zero.
-    - It struggles with loss landscapes that are shaped differently in various directions (poor conditioning), leading to slow convergence.
-- **Advanced Optimizers**:
-    - **SGD+Momentum**: This method introduces a "velocity" term that accumulates a running mean of past gradients. It helps the optimizer move past local minima and accelerates convergence, especially in ravines. Nesterov Momentum is a slight variant that often performs better.
-    - **AdaGrad**: It adapts the learning rate for each parameter, using smaller updates for frequently occurring features and larger updates for infrequent ones. Its main weakness is that the learning rate can shrink to become infinitesimally small over time.
-    - **RMSProp**: This optimizer resolves AdaGrad's diminishing learning rate issue by using a moving average of the squared gradients, preventing it from growing too large.
-    - **Adam**: This is one of the most popular optimizers, combining the ideas of Momentum and RMSProp. It uses both the first moment (the mean, like momentum) and the second moment (the uncentered variance, like RMSProp) of the gradients.
----
-## **Chapter 5. Neural Networks and Backpropagation**
-- **Backpropagation**: This is the core algorithm for training neural networks. It uses the **chain rule** from calculus to efficiently compute the gradient of the loss function with respect to every weight in the network. The process involves a forward pass (computing the output and loss) followed by a backward pass (propagating the gradient from the output layer back to the input layer).
-- **Computational Graphs**: Neural networks can be represented as computational graphs, where nodes are operations (e.g., multiplication, addition) and edges are the data flow. Backpropagation is essentially the process of computing gradients on this graph.
-- **Activation Functions**: These functions introduce non-linearity into the network, allowing it to learn complex patterns.
-    - **Sigmoid**: Historically popular but has issues like "killing" gradients when neurons saturate (output is close to 0 or 1) and its output not being zero-centered.
-    - **Tanh**: Solves the zero-centered problem of Sigmoid but still suffers from gradient saturation.
-    - **ReLU (Rectified Linear Unit)**: The most common activation function. It computes `f(x) = max(0, x)`. It is computationally efficient and avoids saturation in the positive region but can "die" if its output is always zero.
-    - **Leaky ReLU**: A variant of ReLU that allows a small, non-zero gradient when the unit is not active (`f(x) = max(0.01x, x)`), preventing the "dying ReLU" problem.
----
-## **Chapter 6. Training Neural Networks: Practical Aspects**
-- **Data Preprocessing**: It's common practice to preprocess input data by making it **zero-centered** (subtracting the mean) and **normalized** (dividing by the standard deviation). This helps the model train more effectively.
-- **Weight Initialization**:
-    - Initializing all weights to zero is a mistake because all neurons will compute the same thing.
-    - Initializing with small random numbers can lead to vanishing gradients in deep networks, where activations shrink to zero.
-    - Initializing with large random numbers can cause saturating activations and exploding gradients.
-    - **Xavier Initialization** is a method that keeps the variance of activations and gradients consistent across layers, which is crucial for training deep networks.
-- **Batch Normalization**: A technique that normalizes the activations of a layer for each mini-batch. It stabilizes and accelerates training by solving the "internal covariate shift" problem, where the distribution of layer inputs changes during training. It also acts as a form of regularization.
-- **Regularization (Dropout)**: During training, **Dropout** randomly sets a fraction of neurons to zero at each forward pass. This prevents neurons from co-adapting too much and forces the network to learn more robust, redundant representations, reducing overfitting.
-- **Regularization (Data Augmentation)**: This technique artificially expands the training dataset by creating modified copies of images (e.g., random flips, rotations, color jitter). This helps the model generalize better to unseen data.
----
-## **Chapter 7. Convolutional Neural Networks (CNNs)**
-- **Convolution Layer**: The core building block of a CNN. It preserves the spatial structure of the input image by convolving a set of learnable filters (kernels) across it. Each filter is specialized to detect a specific feature (e.g., an edge, a color blob). The output is a set of **activation maps** representing the detected features.
-- **Pooling Layer**: This layer is used to downsample the spatial dimensions of the activation maps, making the representation smaller and more manageable. **Max Pooling** is the most common form, where a small window is slid over the map, and only the maximum value in the window is kept. This provides a degree of translation invariance.
-- **Fully Connected (FC) Layer**: Typically found at the end of a CNN architecture, this layer takes the high-level features from the convolutional and pooling layers and maps them to the final class scores. Each neuron in an FC layer is connected to all activations in the previous layer.
+### 5. CNN Architecture Flow
+- **Typical Pipeline:** Input → Conv → Pool → Conv → Pool → Flatten → Dense (ReLU) → Softmax classification.
+- **Feature Extraction:** Early layers detect edges; deeper layers learn complex patterns (hierarchical representation).
+- **Backpropagation:** End-to-end training optimizes all filters/weights via gradient descent.
 
+### 6. Implementation Example
+- **Keras Structure:** Conv2D → MaxPooling2D → Flatten → Dense → Output; uses ReLU activation, softmax for multiclass.
 
+</details>
+
+<details>
+<summary>KOR (한국어 버전)</summary>
+
+# 합성곱 신경망 (CNN)
+
+### 1. CNN 소개와 역사
+- **기원:** 1989 Yann LeCun의 LeNet-5로 문서 인식 개발; 공간적 토폴로지 보존하며 이미지 처리에 탁월.
+- **주요 장점:** 매개변수 공유로 과적합 감소; 국부 패턴과 공간 계층 효과적 포착.
+- **LeNet-5 구조:** 32x32 입력 → CONV1(28x28x6) → POOL → CONV2(10x10x16) → POOL → FC → Softmax(10 클래스).
+
+### 2. 합성곱 계층 기초
+- **연산:** 필터(커널)가 입력 위 슬라이딩하며 특징 맵(활성화/응답 맵) 생성; 모서리, 질감 탐지.
+- **RGB 처리:** Red, Green, Blue 채널별 필터로 색상별 특징 맵 생성; ReLU 활성화 적용.
+- **필터 vs 커널:** 학습 중 최적화되는 필터; Sobel 필터는 수직/수평 모서리 명시적 탐지.
+
+### 3. 풀링 계층 연산
+- **종류:** Max Pooling(최대값), Average Pooling(평균), Min Pooling; 특징 맵 다운샘플링으로 연산 감소.
+- **목적:** 공간 불변성, 과적합 방지, 차원 축소(예: 6x6 → 3x3, 2x2 stride=2).
+- **스트라이드 효과:** 출력 크기 제어; 큰 스트라이드일수록 공간 차원 빠르게 축소.
+
+### 4. 고급 CNN 구성요소
+- **패딩:** 'Valid'(패딩 없음, 크기 축소), 'Same'(제로 패딩으로 입력 크기 유지); 가장자리 특징 보존.
+- **드롭아웃:** 완전 연결층에서 노드 랜덤 제거로 공동 적응 및 과적합 방지.
+- **완전 연결층:** 특징 맵 평탄화 후 최종 분류; 합성곱/풀링 스택 뒤따름.
+
+### 5. CNN 구조 흐름
+- **전형적 파이프라인:** 입력 → Conv → Pool → Conv → Pool → Flatten → Dense(ReLU) → Softmax 분류.
+- **특징 추출:** 초기 층은 모서리 탐지; 깊은 층은 복잡 패턴 학습(계층적 표현).
+- **역전파:** 모든 필터/가중치 그라디언트 디센트로 엔드투엔드 학습.
+
+### 6. 구현 예시
+- **Keras 구조:** Conv2D → MaxPooling2D → Flatten → Dense → 출력; ReLU 활성화, 다중 클래스 소프트맥스.
+
+</details>
