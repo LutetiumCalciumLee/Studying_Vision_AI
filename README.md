@@ -1,79 +1,71 @@
-# Computer Vision
-***
-## Chapter 1. Fundamentals of Image Classification
-### The Problem: Semantic Gap
-- **Computer vs. Human Vision**: A computer perceives an image as a large grid of numerical pixel values (e.g., values from 0-255 across RGB channels), while a human interprets it semantically (e.g., identifying an object as a "cat"). The core challenge is bridging this "semantic gap".
-- **Image Representation**: An image is treated as a numerical array. For instance, a 32x32 pixel image with 3 color channels (RGB) is represented as a 3072-dimensional vector of numbers for the classifier.
+<details>
+<summary>ENG (English Version)</summary>
 
-### Core Challenges in Classification
-Object recognition is made difficult by several factors of variation :
-- **Illumination**: Changes in lighting can drastically alter pixel values.
-- **Deformation**: Objects can appear in various non-rigid shapes and poses.
-- **Occlusion**: Objects may be partially hidden from view.
-- **Background Clutter**: The object of interest may blend in with a complex background.
-- **Intraclass Variation**: Objects within the same class can look very different from one another (e.g., different breeds of cats).
-***
-## Chapter 2. Classification Models
-### k-Nearest Neighbors (k-NN)
-- **Method**: A simple algorithm that classifies an image based on the majority class of its "k" nearest neighbors in the training data, typically measured by L1 (Manhattan) or L2 (Euclidean) distance between pixel values.
-- **Limitations**: The k-NN approach is rarely used for image classification because it is very slow during testing, pixel-level distance metrics are not robust to appearance changes, and it performs poorly in high-dimensional spaces like images (an issue known as the "curse of dimensionality").
+# Line Detection Techniques
 
-### Parametric Approach: Linear Classifiers
-- **Core Idea**: Instead of comparing to all training images, this approach defines a score function that maps the raw pixel data to class scores using a set of parameters (weights).
-- **Score Function**: A simple linear score function is defined as **f(x, W) = Wx + b**, where 'x' is the input image data (stretched into a column vector), 'W' is the weight matrix, and 'b' is a bias vector.
-- **Process**: The weight matrix 'W' acts as a set of templates, one for each class. The input image is compared against each class template via a matrix multiplication to generate a score for each class. The class with the highest score is the predicted label.
-***
-## Chapter 3. Model Training and Optimization
-### Loss Function
-- **Purpose**: A loss function (or cost function) quantifies how well the model's predicted scores align with the ground-truth labels in the training data. The goal of training is to find the set of weights 'W' that minimizes this loss.
-- **Multiclass SVM Loss**: Also known as Hinge Loss, it aims to ensure that the score for the correct class is higher than the scores for all incorrect classes by at least a fixed margin.
-- **Softmax Classifier (Cross-Entropy Loss)**: This function interprets the raw class scores as unnormalized log probabilities. It then computes the probability for each class and aims to maximize the probability of the correct class. The loss is the negative log-likelihood of the correct class.
+### 1. Line Detection Motivation
+- **Parametric Space Search:** Line fitting treats detection as search problem in parameter space (ρ, θ).
+- **Practical Need:** Essential for shape analysis, object recognition, geometric feature extraction.
+- **Challenges:** Noise, missing segments, outliers complicate direct fitting.
 
-### Regularization
-- **Goal**: Regularization is a technique used to prevent the model from becoming overly complex and overfitting to the training data. It encourages the model to use simpler weights, aligning with the principle of Occam's Razor.
-- **Method**: A regularization penalty term is added to the loss function. Common types include **L2 regularization** (penalizes the squared magnitude of weights), **L1 regularization** (penalizes the absolute value of weights), and **Elastic Net** (a combination of L1 and L2).
+### 2. Hough Transform Fundamentals
+- **Core Principle:** Maps edge points from image space to parameter space (sinusoids intersect at line parameters).
+- **Vertical Line Example:** Discrete parameter space; accumulator array votes for line presence.
+- **Preprocessing:** Edge detection (Canny/Sobel) + thresholding creates binary edge map.
 
-### Optimization
-- **Objective**: The ultimate goal is to find the optimal weight matrix 'W' that minimizes the total loss, which is the sum of the data loss (from the SVM or Softmax function) and the regularization loss. This process is called optimization.
+### 3. Hough Transform Process
+- **Parameter Space Discretization:** Non-linear quantization for angle θ; constrained ρ range.
+- **Voting Mechanism:** Each edge point votes for possible lines; peaks indicate strong lines.
+- **Accumulator Analysis:** Local maxima detection finds best line fits despite gaps/noise.
 
----
+### 4. Robustness Advantages
+- **Noise Insensitivity:** Accumulator smooths local data imprecision and image noise.
+- **Gap Tolerance:** Handles missing line parts, non-linear structures effectively.
+- **Outlier Handling:** Distinguishes inliers from outliers through voting consensus.
 
-## **Chapter 4. Optimization Algorithms**
-- **Gradient Descent**: The fundamental optimization strategy is to iteratively update the weights by taking steps in the direction opposite to the gradient of the loss function. The goal is to "follow the slope" downhill to find the minimum loss.
-    - **Numerical vs. Analytic Gradient**: The gradient can be computed numerically (slow, approximate) or analytically using calculus (fast, exact, but error-prone). In practice, analytic gradients are used and verified with numerical checks.
-- **Stochastic Gradient Descent (SGD)**: Instead of computing the full loss over the entire dataset, SGD estimates the gradient using a small batch of data. This is much faster but can be noisy.
-- **Challenges with SGD**:
-    - It can get stuck in **local minima or saddle points** where the gradient is zero.
-    - It struggles with loss landscapes that are shaped differently in various directions (poor conditioning), leading to slow convergence.
-- **Advanced Optimizers**:
-    - **SGD+Momentum**: This method introduces a "velocity" term that accumulates a running mean of past gradients. It helps the optimizer move past local minima and accelerates convergence, especially in ravines. Nesterov Momentum is a slight variant that often performs better.
-    - **AdaGrad**: It adapts the learning rate for each parameter, using smaller updates for frequently occurring features and larger updates for infrequent ones. Its main weakness is that the learning rate can shrink to become infinitesimally small over time.
-    - **RMSProp**: This optimizer resolves AdaGrad's diminishing learning rate issue by using a moving average of the squared gradients, preventing it from growing too large.
-    - **Adam**: This is one of the most popular optimizers, combining the ideas of Momentum and RMSProp. It uses both the first moment (the mean, like momentum) and the second moment (the uncentered variance, like RMSProp) of the gradients.
----
-## **Chapter 5. Neural Networks and Backpropagation**
-- **Backpropagation**: This is the core algorithm for training neural networks. It uses the **chain rule** from calculus to efficiently compute the gradient of the loss function with respect to every weight in the network. The process involves a forward pass (computing the output and loss) followed by a backward pass (propagating the gradient from the output layer back to the input layer).
-- **Computational Graphs**: Neural networks can be represented as computational graphs, where nodes are operations (e.g., multiplication, addition) and edges are the data flow. Backpropagation is essentially the process of computing gradients on this graph.
-- **Activation Functions**: These functions introduce non-linearity into the network, allowing it to learn complex patterns.
-    - **Sigmoid**: Historically popular but has issues like "killing" gradients when neurons saturate (output is close to 0 or 1) and its output not being zero-centered.
-    - **Tanh**: Solves the zero-centered problem of Sigmoid but still suffers from gradient saturation.
-    - **ReLU (Rectified Linear Unit)**: The most common activation function. It computes `f(x) = max(0, x)`. It is computationally efficient and avoids saturation in the positive region but can "die" if its output is always zero.
-    - **Leaky ReLU**: A variant of ReLU that allows a small, non-zero gradient when the unit is not active (`f(x) = max(0.01x, x)`), preventing the "dying ReLU" problem.
----
-## **Chapter 6. Training Neural Networks: Practical Aspects**
-- **Data Preprocessing**: It's common practice to preprocess input data by making it **zero-centered** (subtracting the mean) and **normalized** (dividing by the standard deviation). This helps the model train more effectively.
-- **Weight Initialization**:
-    - Initializing all weights to zero is a mistake because all neurons will compute the same thing.
-    - Initializing with small random numbers can lead to vanishing gradients in deep networks, where activations shrink to zero.
-    - Initializing with large random numbers can cause saturating activations and exploding gradients.
-    - **Xavier Initialization** is a method that keeps the variance of activations and gradients consistent across layers, which is crucial for training deep networks.
-- **Batch Normalization**: A technique that normalizes the activations of a layer for each mini-batch. It stabilizes and accelerates training by solving the "internal covariate shift" problem, where the distribution of layer inputs changes during training. It also acts as a form of regularization.
-- **Regularization (Dropout)**: During training, **Dropout** randomly sets a fraction of neurons to zero at each forward pass. This prevents neurons from co-adapting too much and forces the network to learn more robust, redundant representations, reducing overfitting.
-- **Regularization (Data Augmentation)**: This technique artificially expands the training dataset by creating modified copies of images (e.g., random flips, rotations, color jitter). This helps the model generalize better to unseen data.
----
-## **Chapter 7. Convolutional Neural Networks (CNNs)**
-- **Convolution Layer**: The core building block of a CNN. It preserves the spatial structure of the input image by convolving a set of learnable filters (kernels) across it. Each filter is specialized to detect a specific feature (e.g., an edge, a color blob). The output is a set of **activation maps** representing the detected features.
-- **Pooling Layer**: This layer is used to downsample the spatial dimensions of the activation maps, making the representation smaller and more manageable. **Max Pooling** is the most common form, where a small window is slid over the map, and only the maximum value in the window is kept. This provides a degree of translation invariance.
-- **Fully Connected (FC) Layer**: Typically found at the end of a CNN architecture, this layer takes the high-level features from the convolutional and pooling layers and maps them to the final class scores. Each neuron in an FC layer is connected to all activations in the previous layer.
+### 5. Practical Implementation
+- **Edge Map Quality:** Canny with varying thresholds (0.1, 0.15) affects detection sensitivity.
+- **Peak Detection:** Non-trivial local maxima finding in accumulator array.
+- **Applications:** MR brain images, geometric pattern recognition.
 
+### 6. Line Fitting Examples
+- **Input Processing:** Original → Edge detection → Hough voting → Line extraction.
+- **Threshold Impact:** Lower thresholds detect more edges but increase noise/false positives.
 
+</details>
+
+<details>
+<summary>KOR (한국어 버전)</summary>
+
+# 직선 검출 기법
+
+### 1. 직선 검출 동기
+- **매개변수 공간 탐색:** 직선 피팅을 (ρ, θ) 매개변수 공간에서의 탐색 문제로 처리.
+- **실용적 필요:** 형상 분석, 객체 인식, 기하학적 특징 추출에 필수.
+- **도전 과제:** 노이즈, 누락된 세그먼트, 이상치가 직접 피팅 복잡화.
+
+### 2. Hough 변환 기초
+- **핵심 원리:** 이미지 공간 엣지점을 매개변수 공간으로 매핑(사인파 교차로 직선 매개변수 결정).
+- **수직선 예시:** 이산 매개변수 공간; 어큐뮬레이터 배열로 직선 존재 투표.
+- **전처리:** 엣지 검출(Canny/Sobel) + 임계값으로 이진 엣지 맵 생성.
+
+### 3. Hough 변환 과정
+- **매개변수 공간 이산화:** 각도 θ 비선형 양자화; ρ 범위 제한.
+- **투표 메커니즘:** 각 엣지점이 가능한 직선에 투표; 피크가 강한 직선 나타냄.
+- **어큐뮬레이터 분석:** 갭/노이즈에도 불구하고 국부 최대값으로 최적 직선 탐지.
+
+### 4. 견고성 장점
+- **노이즈 비감도:** 어큐뮬레이터가 국소 데이터 부정확성/이미지 노이즈 완화.
+- **갭 허용:** 누락된 직선 부분, 비선형 구조 효과적 처리.
+- **이상치 처리:** 투표 합의로 인라이어와 아웃라이어 구분.
+
+### 5. 실무 구현
+- **엣지 맵 품질:** Canny 다양한 임계값(0.1, 0.15)으로 감도 조절.
+- **피크 탐지:** 어큐뮬레이터 배열에서 비자명 국부 최대값 찾기.
+- **응용:** MR 뇌 영상, 기하학적 패턴 인식.
+
+### 6. 직선 피팅 예시
+- **입력 처리:** 원본 → 엣지 검출 → Hough 투표 → 직선 추출.
+- **임계값 영향:** 낮은 임계값은 더 많은 엣지 탐지만 노이즈/오탐 증가.
+
+</details>
