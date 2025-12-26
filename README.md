@@ -22,7 +22,7 @@ This section explores both the theory and practical applications of computer vis
 - Color models, image segmentation, and OpenCV-based practices
 
 
-### Vision AI Projects
+### Vision AI Projects:
 
 #### 1. Drowsy Driving Prevention System
 A real-time system that uses facial landmarks and Eye Aspect Ratio (EAR) to detect driver drowsiness, triggering alarms and visual alerts.
