@@ -1,103 +1,667 @@
-<details>
-<summary>ENG (English Version)</summary>
+<details> <summary>ENG (English Version)</summary>
 
-# Artificial Intelligence & Computer Vision Projects
+# Drowsiness Detection Project
 
-## 1. Understanding Artificial Intelligence
-This section provides an overview of AI theories and emerging technologies:
+## Project Overview
 
-- The Fourth Industrial Revolution and the transformation of IT
-- AI learning types: Supervised, Unsupervised, and Reinforcement Learning
-- Machine Learning and Deep Learning models including CNNs and Transformers
-- AI UX and AIX (Artificial Intelligence User Experience Design)
-- Includes various examples and visual materials
+This project is a real-time drowsiness detection system that monitors a driver's eyes through a webcam and alerts when drowsiness is detected. It uses facial landmark detection to calculate the Eye Aspect Ratio (EAR) and determines drowsiness based on eye closure duration. The system can detect even partially closed eyes (squinting) and provides visual warnings and beep alerts.
 
+### Key Features
+- Real-time face and eye detection using dlib 68-point facial landmarks
+- Eye landmark visualization with polylines (eyes only, for drowsiness detection focus)
+- Eye Aspect Ratio (EAR) calculation for accurate eye state detection
+- Moving Average filtering to reduce false positives
+- Detection of partially closed eyes (squinting)
+- 1-second threshold for eye closure detection
+- Visual warning display with Korean text support
+- Beep alarm sound for immediate alert
+- Thread-based alarm system with 30-second cooldown period
+- Korean path support for Windows environment
 
-## 2. Computer Vision
-This section explores both the theory and practical applications of computer vision:
+## Technology Stack
 
-- Introduction to Computer Vision and its significance
-- Image processing, edge detection, and line/face recognition techniques
-- Real-world application: Driver Drowsiness Detection System
-- Color models, image segmentation, and OpenCV-based practices
+| Technology | Version/Description |
+|------|----------|
+| **Python** | 3.12 |
+| **OpenCV (cv2)** | Video capture and image processing |
+| **dlib** | Face detection and 68-point landmark prediction |
+| **imutils** | Image utilities (resize, transforms) |
+| **NumPy** | Array operations and mathematical calculations |
+| **PIL (Pillow)** | Image processing and Korean text rendering |
+| **winsound** | Beep alarm sound generation |
+| **threading** | Asynchronous alarm processing |
+| **OS/Tempfile/Shutil** | Path handling and temp file management |
 
+## Project Goals
 
-### Vision AI Projects:
+1. Real-time detection of eye closure and drowsiness
+2. Accurate detection including partially closed eyes (squinting)
+3. Reduce false positives through Moving Average filtering
+4. Provide immediate visual and audio alerts
+5. Support Korean text display in Windows environment
+6. Reliable model loading in Korean path environments
 
-#### 1. Drowsy Driving Prevention System
-A real-time system that uses facial landmarks and Eye Aspect Ratio (EAR) to detect driver drowsiness, triggering alarms and visual alerts.
+## Algorithm Explanation
 
-#### 2. Real-Time Open-Vocabulary Object Detection
-Implements YOLO-World to detect arbitrary objects via user-defined prompts in real-time, with a web-based interface:contentReference.
+### Overall Process Flow
+```
+Webcam frame
+    ↓
+Grayscale conversion
+    ↓
+dlib face detection
+    ↓
+68-point landmark prediction
+    ↓
+Extract left and right eye coordinates
+    ↓
+Calculate Eye Aspect Ratio (EAR) for each eye
+    ↓
+Calculate average EAR
+    ↓
+Apply Moving Average filter
+    ↓
+Check if EAR < threshold (0.30)
+    ↓
+Count consecutive frames below threshold
+    ↓
+If ≥ 30 frames (1 second): Display WARNING + Beep
+    ↓
+If ≥ 60 frames (2 seconds): Display drowsiness alert + Alarm
+```
 
-#### 3. Human Pose Estimation
-Uses YOLOv8-pose for real-time keypoint detection and action classification (e.g., sitting vs standing) via XGBoost:contentReference.
+### Step 1: Model Preparation and Path Handling
+- Locate `shape_predictor_68_face_landmarks.dat` using script path
+- Copy model to temp directory to avoid Korean path issues
+- Initialize face detector and landmark predictor
 
-#### 4. Age & Gender Recognition
-Estimates age and gender from faces using a WideResNet model trained on IMDB-WIKI dataset with real-time webcam support:contentReference.
+### Step 2: Video Input Setup
+- Open webcam with `cv2.VideoCapture(0)`
+- Resize frame to width 720 for performance
+- Flip frame horizontally for mirror mode
+- Wait 2 seconds for camera warm-up
 
-#### 5. Object Tracking Systems
-Explores single and multi-object tracking using algorithms like SORT and DeepSORT with YOLOv8 for real-time applications.
+### Step 3: Face Detection and Landmark Extraction
+- Convert frame to grayscale
+- Detect faces using `dlib.get_frontal_face_detector()`
+- For each detected face, predict 68 landmark points
+- Extract left and right eye coordinates using `face_utils.FACIAL_LANDMARKS_IDXS`
+- Draw eye landmark outlines using `cv2.polylines()` for visual feedback:
+  - **Eyes**: Cyan closed polylines (focus on eyes for drowsiness detection)
 
-#### 6. Road Segmentation & Object Detection
-Combines YOLOv8 object detection with DeepLabv3 segmentation using OpenVINO for ADAS applications.
+### Step 4: Eye Aspect Ratio (EAR) Calculation
 
-#### 7. Korean License Plate Recognition
-Detects and reads Korean vehicle license plates in real time using YOLOv8, YOLOv5, and EasyOCR.
+The EAR is calculated using the following formula:
 
-#### 8. Three-Dimensional Computer Vision
-Implements 3D object detection and monocular depth estimation with BEV visualization using LiDAR/KITTI datasets.
+```python
+def eye_aspect_ratio(eye):
+    # Vertical distances
+    a = euclidean_dist(eye[1], eye[5])
+    b = euclidean_dist(eye[2], eye[4])
+    # Horizontal distance
+    c = euclidean_dist(eye[0], eye[3])
+    ear = (a + b) / (1.5 * c)
+    return ear
+```
+
+**EAR Formula Explanation:**
+- **a, b**: Vertical distances between eye landmarks (top-bottom)
+- **c**: Horizontal distance between eye corners (left-right)
+- **EAR**: Ratio of vertical to horizontal distances
+- When eyes are open: EAR is higher (typically > 0.30)
+- When eyes are closed: EAR decreases significantly (< 0.30)
+
+### Step 5: Moving Average Filtering
+
+To reduce false positives from brief blinks:
+
+```python
+def calculate_average(value):
+    g_data.append(value)
+    if len(g_data) > g_window_Size:
+        g_data = g_data[-g_window_Size:]
+    if len(g_data) < g_window_Size:
+        return 0.0
+    return float(sum(g_data) / g_window_Size)
+```
+
+- Window size: 15 frames
+- Smooths out rapid fluctuations
+- Prevents false alarms from normal blinking
+
+### Step 6: Drowsiness Detection Logic
+
+1. **Eye Closure Detection (1 second)**
+   - If `ear_avg < 0.30` for ≥ 30 consecutive frames (≈1 second)
+   - Display "WARNING: 눈을 감았습니다!" message
+   - Play beep sound (1000Hz, 200ms)
+   - Mark eye landmarks with red dots
+
+2. **Drowsiness Detection (2 seconds)**
+   - If `ear_avg < 0.30` for ≥ 60 consecutive frames (≈2 seconds)
+   - Display "졸음이 감지 되었습니다" message
+   - Trigger alarm system (with 30-second cooldown)
+
+### Step 7: Alarm System
+- Thread-based alarm processing to avoid blocking main loop
+- 30-second cooldown period between alarms
+- Beep sound generation using `winsound.Beep()`
+
+## Code Structure
+
+### Main Functions
+
+#### `calculate_average(value)`
+Moving Average filter to smooth EAR values and reduce false positives.
+
+**Parameters:**
+- `value`: Current EAR value
+
+**Returns:**
+- Averaged EAR value (0.0 if insufficient data)
+
+#### `euclidean_dist(ptA, ptB)`
+Calculate Euclidean distance between two points.
+
+**Parameters:**
+- `ptA`, `ptB`: Point coordinates (NumPy arrays)
+
+**Returns:**
+- Euclidean distance
+
+#### `eye_aspect_ratio(eye)`
+Calculate Eye Aspect Ratio for a single eye.
+
+**Parameters:**
+- `eye`: Array of 6 eye landmark points
+
+**Returns:**
+- EAR value (float)
+
+#### `alarm_notification()`
+Generate beep alarm sound in a separate thread.
+
+#### `start_Alarm()`
+Manage alarm triggering with cooldown period (30 seconds).
+
+### Code Sections
+
+1. **Initial Setup** (Lines 18-30)
+   - Script directory and path configuration
+   - Model and video file paths
+   - Dataset file location
+
+2. **Moving Average Function** (Lines 33-46)
+   - Sliding window average calculation
+   - Window size: 15 frames
+
+3. **EAR Calculation Functions** (Lines 48-62)
+   - Euclidean distance calculation
+   - Eye Aspect Ratio formula implementation
+
+4. **Alarm Functions** (Lines 64-90)
+   - Beep sound generation
+   - Thread-based alarm management
+   - Cooldown period handling
+
+5. **Global Variables** (Lines 93-99)
+   - Alarm timing variables
+   - Moving Average window size and data
+   - Blink counter
+
+6. **Font Setup** (Lines 105-107)
+   - Korean font loading for text rendering
+
+7. **Model Loading** (Lines 109-127)
+   - Korean path handling via temp file copy
+   - Face detector and landmark predictor initialization
+
+8. **Video Capture Setup** (Lines 133-139)
+   - Webcam initialization
+   - Error handling
+
+9. **Main Processing Loop** (Lines 141-251)
+   - Frame reading and preprocessing
+   - Face detection
+   - Landmark extraction and facial region visualization
+   - EAR calculation and filtering
+   - Drowsiness detection and alerting
+   - Visual feedback rendering (polylines and warning messages)
+
+## Execution Method
+
+### 1. Environment Setup
+```bash
+conda activate vision_ai
+pip install opencv-python dlib imutils numpy pillow
+```
+
+### 2. File Structure
+```
+Vision AI/
+├── 00_Dataset/
+│   └── shape_predictor_68_face_landmarks.dat
+└── 04_Setting/
+    └── 06.detect_drowsiness.py
+```
+
+### 3. Execution
+```bash
+python 04_Setting/06.detect_drowsiness.py
+```
+
+### 4. Usage
+- Position face in front of webcam
+- System will detect face and monitor eyes
+- Close eyes for 1 second to see WARNING message
+- Keep eyes closed for 2 seconds to trigger drowsiness alert
+- Press `q` key to exit
+
+## Performance and Results
+
+### Detection Accuracy
+- Successfully detects fully closed eyes
+- Detects partially closed eyes (squinting) with EAR threshold 0.30
+- Moving Average filter reduces false positives from normal blinking
+- Real-time processing at ~30 FPS (720px width)
+
+### Visualization Features
+- **Eye Landmark Outlines**: Eye contours connected with cyan polylines (closed polylines)
+  - Focus on eyes only for drowsiness detection
+  - Visual feedback for eye state monitoring
+- **Eye Landmark Points**: Green dots on key eye landmarks for EAR calculation
+- **Warning Overlay**: Yellow background with red text when drowsiness detected
+
+### Alert System
+- **Visual Alert**: Yellow background with red text warning
+- **Audio Alert**: 1000Hz beep sound (200ms duration)
+- **Drowsiness Alert**: Red text message after 2 seconds
+- **Alarm Cooldown**: 30 seconds between alarms
+
+### Example Output
+```
+모델 파일을 임시 경로로 복사했습니다: C:\...\shape_predictor_68_face_landmarks.dat
+Play beep
+```
+
+## Learning Points
+
+What was learned through this project:
+
+1. **Facial Landmark Detection**
+   - dlib 68-point facial landmark model usage
+   - Eye region extraction and analysis
+   - Coordinate system understanding
+
+2. **Eye Aspect Ratio (EAR)**
+   - Mathematical calculation of eye state
+   - Threshold selection for detection
+   - Handling individual differences
+
+3. **Signal Processing**
+   - Moving Average filtering for noise reduction
+   - Frame-based temporal analysis
+   - False positive reduction techniques
+
+4. **Real-time Processing**
+   - Video stream handling with OpenCV
+   - Performance optimization techniques
+   - Non-blocking alarm system design
+
+5. **Image Processing**
+   - Grayscale conversion
+   - Frame resizing and flipping
+   - Text rendering with PIL
+
+6. **System Design**
+   - Thread-based asynchronous processing
+   - Cooldown mechanism implementation
+   - Error handling and robustness
+
+7. **Windows Environment Issues**
+   - Korean path handling
+   - Font management for Korean text
+   - System sound API usage (winsound)
+
+## Developer Information
+
+**Project**: Vision AI Practice  
+**Filename**: `06.detect_drowsiness.py`  
+**Development Environment**: Windows, Python, OpenCV, dlib, NumPy, PIL, winsound  
+**Purpose**: Real-time drowsiness detection for driver safety
 
 </details>
 
-<details>
-<summary>KOR (한국어 버전)</summary>
+<details> <summary>KOR (한국어 버전)</summary>
 
-# 인공지능 및 영상 인식 프로젝트
+# 졸음 감지 프로젝트 (Drowsiness Detection Project)
 
-## 1. 인공지능 개념 이해
-AI에 대한 이론과 기술 트렌드를 정리했습니다.
+## 프로젝트 개요
 
-- 4차 산업혁명과 IT 기술의 변화
-- 인공지능 학습 유형: 지도학습, 비지도학습, 강화학습
-- 머신러닝과 딥러닝 모델, CNN, Transformer
-- AI UX 및 AIX(사용자 경험 설계)까지 포괄
-- 다양한 예시와 시각적 자료 포함
+이 프로젝트는 웹캠을 통해 운전자의 눈을 실시간으로 모니터링하고 졸음이 감지되면 경고를 제공하는 졸음 감지 시스템입니다. 얼굴 랜드마크 감지를 사용하여 눈 종횡비(EAR)를 계산하고 눈을 감은 지속 시간을 기반으로 졸음을 판단합니다. 실눈 상태도 감지할 수 있으며 시각적 경고와 알림음을 제공합니다.
 
+### 주요 특징
+- dlib 68점 얼굴 랜드마크를 이용한 실시간 얼굴 및 눈 감지
+- 폴리라인을 이용한 눈 랜드마크 시각화 (졸음 감지에 필요한 눈 부분만)
+- 눈 종횡비(EAR) 계산을 통한 정확한 눈 상태 감지
+- 오탐 방지를 위한 Moving Average 필터링
+- 실눈(반쯤 감은 눈) 상태 감지
+- 1초 이상 눈을 감으면 감지하는 임계값
+- 한글 텍스트 지원 시각적 경고 표시
+- 즉각적인 알림음
+- 30초 쿨다운 기간을 가진 스레드 기반 알람 시스템
+- Windows 환경에서의 한글 경로 지원
 
-## 2. 영상 인식
-컴퓨터 비전의 이론부터 실습까지 정리했습니다.
+## 기술 스택
 
-- Computer Vision의 개요 및 필요성
-- 이미지 처리, 에지 검출, 선/얼굴 인식 기술
-- 실제 구현 사례: 졸음운전 감지 시스템
-- 색상 모델, 세분화, OpenCV 활용 실습
+| 기술 | 버전/설명 |
+|------|----------|
+| **Python** | 3.12 |
+| **OpenCV (cv2)** | 영상 캡처 및 이미지 처리 |
+| **dlib** | 얼굴 감지 및 68점 랜드마크 예측 |
+| **imutils** | 이미지 유틸리티(리사이즈, 변환 등) |
+| **NumPy** | 배열 연산 및 수학 계산 |
+| **PIL (Pillow)** | 이미지 처리 및 한글 텍스트 렌더링 |
+| **winsound** | 알림음 알람 생성 |
+| **threading** | 비동기 알람 처리 |
+| **OS/Tempfile/Shutil** | 파일 경로 및 임시 파일 관리 |
 
+## 프로젝트 목표
 
-### Vision AI 프로젝트
+1. 눈 감음 및 졸음의 실시간 감지
+2. 실눈(반쯤 감은 눈) 상태까지 정확히 감지
+3. Moving Average 필터링을 통한 오탐 감소
+4. 즉각적인 시각 및 음향 알림 제공
+5. Windows 환경에서 한글 텍스트 표시 지원
+6. 한글 경로 환경에서 안정적인 모델 로딩
 
-#### 1. 졸음운전 방지 시스템
-눈 종횡비(EAR) 기반으로 졸음을 실시간 감지하고, 경고음 및 시각적 알림을 제공하는 시스템
+## 알고리즘 설명
 
-#### 2. 실시간 개방형 어휘 객체 탐지
-YOLO-World를 활용해 프롬프트 기반 실시간 객체 탐지를 수행하며 웹 앱 UI도 포함
+### 전체 프로세스 흐름
+```
+웹캠 프레임
+    ↓
+그레이스케일 변환
+    ↓
+dlib 얼굴 감지
+    ↓
+68점 랜드마크 예측
+    ↓
+왼쪽 및 오른쪽 눈 좌표 추출
+    ↓
+각 눈의 눈 종횡비(EAR) 계산
+    ↓
+평균 EAR 계산
+    ↓
+Moving Average 필터 적용
+    ↓
+EAR < 임계값(0.30) 확인
+    ↓
+임계값 미만 연속 프레임 카운트
+    ↓
+≥ 30프레임(1초): WARNING 표시 + 알림음
+    ↓
+≥ 60프레임(2초): 졸음 경고 표시 + 알람
+```
 
-#### 3. 인간 자세 추정
-YOLOv8-pose로 키포인트 추출 및 XGBoost 분류기를 활용해 자세(앉기/서기)를 실시간 예측
+### 1단계: 모델 준비 및 경로 처리
+- 스크립트 경로 기반으로 `shape_predictor_68_face_landmarks.dat` 위치 확인
+- 한글 경로 문제를 피하기 위해 임시 디렉터리로 모델 복사
+- 얼굴 감지기 및 랜드마크 예측기 초기화
 
-#### 4. 연령 및 성별 인식
-IMDB-WIKI 학습 모델(WideResNet)을 기반으로 얼굴에서 연령과 성별을 실시간으로 추정
+### 2단계: 영상 입력 설정
+- `cv2.VideoCapture(0)`으로 웹캠 열기
+- 성능을 위해 프레임을 폭 720으로 리사이즈
+- 거울 모드를 위해 프레임 좌우 반전
+- 카메라 예열을 위해 2초 대기
 
-#### 5. 객체 추적 시스템
-YOLOv8과 DeepSORT를 이용해 다중 객체의 위치와 ID를 추적하는 실시간 트래킹 시스템
+### 3단계: 얼굴 감지 및 랜드마크 추출
+- 프레임을 그레이스케일로 변환
+- `dlib.get_frontal_face_detector()`로 얼굴 검출
+- 검출된 얼굴마다 68점 랜드마크 예측
+- `face_utils.FACIAL_LANDMARKS_IDXS`를 사용하여 왼쪽 및 오른쪽 눈 좌표 추출
+- 시각적 피드백을 위해 `cv2.polylines()`로 눈 랜드마크 윤곽선 그리기:
+  - **눈**: 청록색 닫힌 폴리라인 (졸음 감지에 필요한 눈 부분만 시각화)
 
-#### 6. 도로 분할 및 객체 탐지
-OpenVINO 기반 도로 영역 세분화와 객체 탐지를 결합하여 ADAS 기능 구현
+### 4단계: 눈 종횡비(EAR) 계산
 
-#### 7. 한국 번호판 인식
-YOLOv8과 EasyOCR을 이용하여 실시간으로 차량 번호판을 인식하고 추적하는 시스템
+다음 공식을 사용하여 EAR를 계산합니다:
 
-#### 8. 3차원 컴퓨터 비전
-LiDAR 및 단안 깊이 추정을 활용한 3D 객체 탐지와 BEV 시각화를 포함한 실시간 구현
+```python
+def eye_aspect_ratio(eye):
+    # 세로 거리
+    a = euclidean_dist(eye[1], eye[5])
+    b = euclidean_dist(eye[2], eye[4])
+    # 가로 거리
+    c = euclidean_dist(eye[0], eye[3])
+    ear = (a + b) / (1.5 * c)
+    return ear
+```
+
+**EAR 공식 설명:**
+- **a, b**: 눈 랜드마크 간의 세로 거리(위-아래)
+- **c**: 눈 모서리 간의 가로 거리(좌-우)
+- **EAR**: 세로와 가로 거리의 비율
+- 눈이 열려 있을 때: EAR가 높음 (일반적으로 > 0.30)
+- 눈이 감혀 있을 때: EAR가 크게 감소 (< 0.30)
+
+### 5단계: Moving Average 필터링
+
+일반적인 깜빡임으로 인한 오탐을 줄이기 위해:
+
+```python
+def calculate_average(value):
+    g_data.append(value)
+    if len(g_data) > g_window_Size:
+        g_data = g_data[-g_window_Size:]
+    if len(g_data) < g_window_Size:
+        return 0.0
+    return float(sum(g_data) / g_window_Size)
+```
+
+- 윈도우 크기: 15프레임
+- 급격한 변동을 평활화
+- 일반적인 깜빡임으로 인한 오경보 방지
+
+### 6단계: 졸음 감지 로직
+
+1. **눈 감음 감지 (1초)**
+   - `ear_avg < 0.30`이 30프레임 이상(≈1초) 지속되면
+   - "WARNING: 눈을 감았습니다!" 메시지 표시
+   - 알림음 재생 (1000Hz, 200ms)
+   - 눈 랜드마크에 빨간 점 표시
+
+2. **졸음 감지 (2초)**
+   - `ear_avg < 0.30`이 60프레임 이상(≈2초) 지속되면
+   - "졸음이 감지 되었습니다" 메시지 표시
+   - 알람 시스템 트리거 (30초 쿨다운)
+
+### 7단계: 알람 시스템
+- 메인 루프를 차단하지 않기 위한 스레드 기반 알람 처리
+- 알람 간 30초 쿨다운 기간
+- `winsound.Beep()`을 사용한 알림음 생성
+
+## 코드 구조
+
+### 주요 함수
+
+#### `calculate_average(value)`
+EAR 값을 평활화하고 오탐을 줄이기 위한 Moving Average 필터.
+
+**매개변수:**
+- `value`: 현재 EAR 값
+
+**반환값:**
+- 평균화된 EAR 값 (데이터 부족 시 0.0)
+
+#### `euclidean_dist(ptA, ptB)`
+두 점 간의 유클리드 거리를 계산.
+
+**매개변수:**
+- `ptA`, `ptB`: 점 좌표 (NumPy 배열)
+
+**반환값:**
+- 유클리드 거리
+
+#### `eye_aspect_ratio(eye)`
+단일 눈의 눈 종횡비를 계산.
+
+**매개변수:**
+- `eye`: 6개의 눈 랜드마크 점 배열
+
+**반환값:**
+- EAR 값 (float)
+
+#### `alarm_notification()`
+별도 스레드에서 알림음 알람을 생성.
+
+#### `start_Alarm()`
+쿨다운 기간(30초)을 가진 알람 트리거 관리.
+
+### 코드 섹션
+
+1. **초기값 설정** (라인 18-30)
+   - 스크립트 디렉터리 및 경로 구성
+   - 모델 및 영상 파일 경로
+   - 데이터셋 파일 위치
+
+2. **Moving Average 함수** (라인 33-46)
+   - 슬라이딩 윈도우 평균 계산
+   - 윈도우 크기: 15프레임
+
+3. **EAR 계산 함수** (라인 48-62)
+   - 유클리드 거리 계산
+   - 눈 종횡비 공식 구현
+
+4. **알람 함수** (라인 64-90)
+   - 알림음 생성
+   - 스레드 기반 알람 관리
+   - 쿨다운 기간 처리
+
+5. **전역 변수** (라인 93-99)
+   - 알람 타이밍 변수
+   - Moving Average 윈도우 크기 및 데이터
+   - 깜빡임 카운터
+
+6. **폰트 설정** (라인 105-107)
+   - 텍스트 렌더링을 위한 한글 폰트 로딩
+
+7. **모델 로딩** (라인 109-127)
+   - 임시 파일 복사를 통한 한글 경로 처리
+   - 얼굴 감지기 및 랜드마크 예측기 초기화
+
+8. **영상 캡처 설정** (라인 133-139)
+   - 웹캠 초기화
+   - 에러 처리
+
+9. **메인 처리 루프** (라인 141-251)
+   - 프레임 읽기 및 전처리
+   - 얼굴 감지
+   - 랜드마크 추출 및 얼굴 부위 시각화
+   - EAR 계산 및 필터링
+   - 졸음 감지 및 알림
+   - 시각적 피드백 렌더링 (폴리라인 및 경고 메시지)
+
+## 실행 방법
+
+### 1. 환경 설정
+```bash
+conda activate vision_ai
+pip install opencv-python dlib imutils numpy pillow
+```
+
+### 2. 파일 구조
+```
+Vision AI/
+├── 00_Dataset/
+│   └── shape_predictor_68_face_landmarks.dat
+└── 04_Setting/
+    └── 06.detect_drowsiness.py
+```
+
+### 3. 실행
+```bash
+python 04_Setting/06.detect_drowsiness.py
+```
+
+### 4. 사용 방법
+- 웹캠 앞에 얼굴을 위치시킵니다
+- 시스템이 얼굴을 감지하고 눈을 모니터링합니다
+- 1초 동안 눈을 감으면 WARNING 메시지가 표시됩니다
+- 2초 동안 눈을 감으면 졸음 경고가 트리거됩니다
+- `q` 키를 눌러 종료합니다
+
+## 성능 및 결과
+
+### 검출 정확도
+- 완전히 감은 눈을 성공적으로 감지
+- EAR 임계값 0.30으로 실눈(반쯤 감은 눈) 상태 감지
+- Moving Average 필터가 일반적인 깜빡임으로 인한 오탐 감소
+- 약 30 FPS로 실시간 처리 (720px 폭)
+
+### 시각화 기능
+- **눈 랜드마크 윤곽선**: 눈 윤곽선을 청록색 폴리라인으로 연결하여 표시 (닫힌 폴리라인)
+  - 졸음 감지에 필요한 눈 부분만 시각화
+  - 눈 상태 모니터링을 위한 시각적 피드백
+- **눈 랜드마크 점**: EAR 계산을 위한 주요 눈 랜드마크에 녹색 점 표시
+- **경고 오버레이**: 졸음 감지 시 빨간색 텍스트가 있는 노란색 배경
+
+### 알림 시스템
+- **시각적 알림**: 빨간색 텍스트가 있는 노란색 배경 경고
+- **음향 알림**: 1000Hz 알림음 (200ms 지속 시간)
+- **졸음 경고**: 2초 후 빨간색 텍스트 메시지
+- **알람 쿨다운**: 알람 간 30초
+
+### 예시 출력
+```
+모델 파일을 임시 경로로 복사했습니다: C:\...\shape_predictor_68_face_landmarks.dat
+Play beep
+```
+
+## 학습 포인트
+
+이 프로젝트를 통해 학습한 내용:
+
+1. **얼굴 랜드마크 감지**
+   - dlib 68점 얼굴 랜드마크 모델 사용
+   - 눈 영역 추출 및 분석
+   - 좌표계 이해
+
+2. **눈 종횡비(EAR)**
+   - 눈 상태의 수학적 계산
+   - 감지를 위한 임계값 선택
+   - 개인차 처리
+
+3. **신호 처리**
+   - 노이즈 감소를 위한 Moving Average 필터링
+   - 프레임 기반 시간 분석
+   - 오탐 감소 기법
+
+4. **실시간 처리**
+   - OpenCV를 사용한 영상 스트림 처리
+   - 성능 최적화 기법
+   - 논블로킹 알람 시스템 설계
+
+5. **이미지 처리**
+   - 그레이스케일 변환
+   - 프레임 리사이즈 및 반전
+   - PIL을 사용한 텍스트 렌더링
+
+6. **시스템 설계**
+   - 스레드 기반 비동기 처리
+   - 쿨다운 메커니즘 구현
+   - 에러 처리 및 견고성
+
+7. **Windows 환경 문제**
+   - 한글 경로 처리
+   - 한글 텍스트를 위한 폰트 관리
+   - 시스템 사운드 API 사용 (winsound)
+
+## 개발자 정보
+
+**프로젝트**: Vision AI 실습  
+**파일명**: `06.detect_drowsiness.py`  
+**개발 환경**: Windows, Python, OpenCV, dlib, NumPy, PIL, winsound  
+**목적**: 운전자 안전을 위한 실시간 졸음 감지
 
 </details>
