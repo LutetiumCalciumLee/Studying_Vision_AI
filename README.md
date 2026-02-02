@@ -234,6 +234,12 @@ Press any key to close all windows.
 Total 4 apples detected.
 ```
 
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/f1763e40-1407-41fa-ae6a-22be20a3101f" />
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/1e39c669-4552-46fc-8721-58c50ee2a3fe" />
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/7987c42e-6f45-4b15-a79c-32688727def4" />
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/f29b13cf-5b9d-4970-a7fa-28a58d485951" />
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/22330c25-b3b3-47f7-85fa-fc585b7e9a62" />
+
 ### Visualization Results
 - Blue circular borders on each detected apple
 - Numbers displayed at the center of apples (1, 2, 3, ...)
@@ -554,6 +560,13 @@ python 04_Setting/09_Apple_detection_test.py
 ```
 총 4개의 사과를 검출했습니다.
 ```
+
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/f1763e40-1407-41fa-ae6a-22be20a3101f" />
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/1e39c669-4552-46fc-8721-58c50ee2a3fe" />
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/7987c42e-6f45-4b15-a79c-32688727def4" />
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/f29b13cf-5b9d-4970-a7fa-28a58d485951" />
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/22330c25-b3b3-47f7-85fa-fc585b7e9a62" />
+
 
 ### 시각화 결과
 - 검출된 각 사과에 파란색 원형 테두리 표시
