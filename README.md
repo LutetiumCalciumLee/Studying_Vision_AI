@@ -118,6 +118,7 @@ python 04_Setting/05_Face_Points_Lines.py
 - Press `q` to exit
 
 ## Performance and Results
+<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/cd7e8017-022f-4ecf-b310-7c052afe70b0" />
 
 ### Demo traits
 - Lightweight processing with 720px width resizing
@@ -285,6 +286,7 @@ python 04_Setting/05_Face_Points_Lines.py
 - `q` 키 입력 시 종료
 
 ## 성능 및 결과
+<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/535a7280-6c57-4e4c-b606-ee68869324c3" />
 
 ### 시연 특징
 - 웹캠 해상도 720px 리사이즈로 경량 처리
